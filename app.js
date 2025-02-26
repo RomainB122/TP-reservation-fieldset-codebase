@@ -1,3 +1,18 @@
+/* SCRIPT
+Ce site sert à reservé des places de concert.
+L'utilisateur doit etre capable de selectionner une date de 
+concert et un nombre de place, ensuite si il clique sur le bouton "+ 
+un nouveau bloc de reservation apparait pour pouvoir reserver une autre 
+date.
+Si l'utilisateur clique sur le bouton "+" la reservation précédente 
+doit se griser et ne peut plus etre modifié. De plus un bouton supprimez 
+apparait pour pourvoir suppimez la reservation.  
+(Les dates précèdement reservé ne doit plus etre disponible a la reservation)
+(Si l'utilisateur supprime une reservation, la date doit a nouveau etre disponible dans les reservation disponible)
+Si l'utilisateur a reserver toute les dates le bouton "+" doit 
+plus etre accessible
+*/
+
 // Liste des dates disponibles
 let datesDisponibles = [
     "2024-01-06",
@@ -28,8 +43,9 @@ function remplirSelect(selectElement) {
         }
     });
 
-    // Active/désactive le bouton "+" en fonction des dates disponibles
-    document.getElementById("add").classList.toggle("disabled", selectElement.options.length === 0);
+    // Vérifie s'il reste des dates disponibles, sinon désactive le bouton "+"
+    let boutonAjout = document.getElementById("add");
+    boutonAjout.classList.toggle("disabled", selectElement.options.length === 0);
 }
 
 // Fonction pour ajouter une nouvelle réservation
@@ -44,13 +60,24 @@ function ajouterReservation(event) {
     // Ajoute la date à la liste des réservations et la retire des choix disponibles
     datesReservees.push(selectedDate);
 
-    // Désactive tous les champs du fieldset précédent
+    // Désactive uniquement les champs "Date" et "Nombre de places" sur la réservation précédente
     let allFieldsets = document.querySelectorAll(".fieldset");
     if (allFieldsets.length > 0) {
         let previousFieldset = allFieldsets[allFieldsets.length - 1]; // Dernière réservation active
-        previousFieldset.classList.add("disabled-fieldset"); // Ajoute une classe CSS
-        previousFieldset.querySelector(".date").disabled = true;
-        previousFieldset.querySelector(".quantite").disabled = true;
+        let dateInput = previousFieldset.querySelector(".date");
+        let quantiteInput = previousFieldset.querySelector(".quantite");
+
+        if (dateInput) dateInput.disabled = true;
+        if (quantiteInput) quantiteInput.disabled = true;
+
+        // Vérifie si un bouton "Supprimer" existe déjà, sinon l'ajoute
+        if (!previousFieldset.querySelector(".suppr")) {
+            let deleteButton = document.createElement("button");
+            deleteButton.className = "suppr";
+            deleteButton.textContent = "Supprimer";
+            deleteButton.onclick = function () { supprimerReservation(this); }; // Passe "this" au lieu de previousFieldset
+            previousFieldset.appendChild(deleteButton);
+        }
     }
 
     // Création d'un nouveau bloc de réservation
@@ -81,4 +108,19 @@ function ajouterReservation(event) {
 
     // Remplit la nouvelle liste déroulante
     remplirSelect(newFieldset.querySelector(".date"));
+}
+
+// Fonction pour supprimer une réservation (corrigée)
+function supprimerReservation(button) {
+    let fieldset = button.parentElement; // Trouve le fieldset parent du bouton
+    let selectedDate = fieldset.querySelector(".date").value;
+
+    // Retirer la date de la liste des réservations
+    datesReservees = datesReservees.filter(date => date !== selectedDate);
+
+    // Supprimer le fieldset du DOM
+    fieldset.remove();
+
+    // Réajouter la date dans les dates disponibles
+    remplirSelect(document.querySelector("fieldset:last-of-type .date"));
 }
